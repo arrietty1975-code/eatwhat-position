@@ -1,252 +1,314 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="description" content="附近餐厅随机选择助手 - 帮你决定去哪吃，享受团购优惠">
-  <title>附近餐厅助手</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>附近美食随机选</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        
+        .location-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+        }
+        
+        .result-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background-color 0.3s;
+        }
+        
+        .btn:hover {
+            background-color: #3367d6;
+        }
+        
+        .loading {
+            text-align: center;
+            color: #666;
+            margin: 20px 0;
+        }
+        
+        .result-card {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: white;
+            border-radius: 6px;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.05);
+        }
+        
+        .merchant-name {
+            font-size: 20px;
+            font-weight: bold;
+            color: #e53935;
+            margin-bottom: 10px;
+        }
+        
+        .dish-name {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .dish-desc {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .error {
+            color: #e53935;
+            text-align: center;
+            margin: 20px 0;
+        }
+    </style>
 </head>
 <body>
-  <!-- 状态栏模拟 -->
-  <div class="status-bar">
-    <div class="status-left" id="currentDate">2026年02月28日</div>
-    <div class="status-right">
-      <span id="locationStatus">定位中...</span>
-    </div>
-  </div>
-
-  <!-- 定位提示 -->
-  <div class="location-tip" id="locationTip" style="display: none;">
-    <span id="locationText">正在获取您的位置...</span>
-    <button class="refresh-location-btn" id="refreshLocation">重新定位</button>
-  </div>
-
-  <!-- 功能按钮区 -->
-  <div class="func-btn-wrap">
-    <button class="onekey-btn" id="oneKeyChooseAll">一键选择三餐</button>
-    <button class="clear-all-meal-btn" id="clearAllMeal">一键清空三餐</button>
-  </div>
-
-  <!-- 三餐随机抽选区 -->
-  <div class="meal-random-section">
-    <!-- 早餐随机 -->
-    <div class="meal-item">
-      <div class="meal-header">
-        <span class="meal-title">早餐</span>
-        <span class="meal-tag">BREAKFAST</span>
-      </div>
-      <div class="food-random-box">
-        <span class="random-food" id="breakfastFood">未选择</span>
-      </div>
-      <!-- 商家信息卡片 -->
-      <div class="restaurant-card" id="breakfastRestaurantCard" style="display: none;">
-        <div class="restaurant-name" id="breakfastRestaurantName"></div>
-        <div class="restaurant-info">
-          <span class="restaurant-distance" id="breakfastDistance"></span>
-          <span class="restaurant-rating" id="breakfastRating"></span>
+    <div class="container">
+        <h1>附近美食随机选</h1>
+        
+        <div class="location-section">
+            <h3>📍 定位状态</h3>
+            <p id="location-status">正在获取您的位置...</p>
         </div>
-        <div class="restaurant-address" id="breakfastAddress"></div>
-        <div class="restaurant-dish" id="breakfastDish"></div>
-        <div class="coupon-info" id="breakfastCoupon">
-          <span class="coupon-label">团购优惠：</span>
-          <span class="coupon-text" id="breakfastCouponText"></span>
+        
+        <div class="result-section">
+            <h3>🎲 随机结果</h3>
+            <div id="result-container">
+                <p class="loading">请先完成定位...</p>
+            </div>
+            <button class="btn" id="refresh-btn" disabled>重新随机选择</button>
         </div>
-      </div>
-      <div class="meal-btn-group">
-        <button class="random-btn" id="toggleBreakfastRoll">开始随机</button>
-        <button class="clear-meal-btn" id="clearBreakfast">清空</button>
-      </div>
     </div>
 
-    <!-- 午餐随机 -->
-    <div class="meal-item">
-      <div class="meal-header">
-        <span class="meal-title">午餐</span>
-        <span class="meal-tag">LUNCH</span>
-      </div>
-      <div class="food-random-box">
-        <span class="random-food" id="lunchFood">未选择</span>
-      </div>
-      <!-- 商家信息卡片 -->
-      <div class="restaurant-card" id="lunchRestaurantCard" style="display: none;">
-        <div class="restaurant-name" id="lunchRestaurantName"></div>
-        <div class="restaurant-info">
-          <span class="restaurant-distance" id="lunchDistance"></span>
-          <span class="restaurant-rating" id="lunchRating"></span>
-        </div>
-        <div class="restaurant-address" id="lunchAddress"></div>
-        <div class="restaurant-dish" id="lunchDish"></div>
-        <div class="coupon-info" id="lunchCoupon">
-          <span class="coupon-label">团购优惠：</span>
-          <span class="coupon-text" id="lunchCouponText"></span>
-        </div>
-      </div>
-      <div class="meal-btn-group">
-        <button class="random-btn" id="toggleLunchRoll">开始随机</button>
-        <button class="clear-meal-btn" id="clearLunch">清空</button>
-      </div>
-    </div>
+    <script>
+        // 模拟商家数据（实际项目中可替换为API接口）
+        const merchants = [
+            {
+                id: 1,
+                name: "老北京炸酱面",
+                lat: 39.908823, // 纬度
+                lng: 116.397470, // 经度
+                dishes: [
+                    { name: "经典炸酱面", desc: "手工面条+秘制炸酱+时蔬配菜" },
+                    { name: "三鲜打卤面", desc: "虾仁+海参+香菇打卤，口感丰富" },
+                    { name: "京味爆肚面", desc: "新鲜爆肚+麻酱调味，老北京风味" }
+                ]
+            },
+            {
+                id: 2,
+                name: "蜀香川菜馆",
+                lat: 39.909210,
+                lng: 116.398120,
+                dishes: [
+                    { name: "水煮鱼", desc: "鲜活草鱼+秘制红油，麻辣鲜香" },
+                    { name: "麻婆豆腐", desc: "嫩豆腐+牛肉末，麻辣入味" },
+                    { name: "回锅肉", desc: "五花肉+蒜苗，咸香微辣" }
+                ]
+            },
+            {
+                id: 3,
+                name: "广式茶餐厅",
+                lat: 39.907950,
+                lng: 116.396880,
+                dishes: [
+                    { name: "叉烧饭", desc: "蜜汁叉烧+滑蛋+香米饭" },
+                    { name: "虾饺皇", desc: "皮薄馅大，虾仁饱满Q弹" },
+                    { name: "菠萝油", desc: "冰火两重天，酥皮香脆" }
+                ]
+            },
+            {
+                id: 4,
+                name: "西北牛肉面",
+                lat: 39.908560,
+                lng: 116.399010,
+                dishes: [
+                    { name: "兰州拉面", desc: "手工拉制面条+牛骨清汤+牛肉片" },
+                    { name: "大盘鸡拌面", desc: "鸡肉+土豆+皮带面，分量十足" },
+                    { name: "羊肉泡馍", desc: "掰馍+羊肉汤，暖胃暖心" }
+                ]
+            },
+            {
+                id: 5,
+                name: "日式居酒屋",
+                lat: 39.909580,
+                lng: 116.397890,
+                dishes: [
+                    { name: "寿喜烧", desc: "牛肉+蔬菜+无菌蛋，甜咸适口" },
+                    { name: "三文鱼刺身", desc: "新鲜三文鱼+芥末酱油" },
+                    { name: "豚骨拉面", desc: "浓郁猪骨汤+叉烧+溏心蛋" }
+                ]
+            }
+        ];
 
-    <!-- 晚餐随机 -->
-    <div class="meal-item">
-      <div class="meal-header">
-        <span class="meal-title">晚餐</span>
-        <span class="meal-tag">DINNER</span>
-      </div>
-      <div class="food-random-box">
-        <span class="random-food" id="dinnerFood">未选择</span>
-      </div>
-      <!-- 商家信息卡片 -->
-      <div class="restaurant-card" id="dinnerRestaurantCard" style="display: none;">
-        <div class="restaurant-name" id="dinnerRestaurantName"></div>
-        <div class="restaurant-info">
-          <span class="restaurant-distance" id="dinnerDistance"></span>
-          <span class="restaurant-rating" id="dinnerRating"></span>
-        </div>
-        <div class="restaurant-address" id="dinnerAddress"></div>
-        <div class="restaurant-dish" id="dinnerDish"></div>
-        <div class="coupon-info" id="dinnerCoupon">
-          <span class="coupon-label">团购优惠：</span>
-          <span class="coupon-text" id="dinnerCouponText"></span>
-        </div>
-      </div>
-      <div class="meal-btn-group">
-        <button class="random-btn" id="toggleDinnerRoll">开始随机</button>
-        <button class="clear-meal-btn" id="clearDinner">清空</button>
-      </div>
-    </div>
-  </div>
+        // DOM元素
+        const locationStatus = document.getElementById('location-status');
+        const resultContainer = document.getElementById('result-container');
+        const refreshBtn = document.getElementById('refresh-btn');
 
-  <!-- 标签栏粘性定位容器 -->
-  <div class="tag-sticky-container">
-    <!-- 筛选标签栏 -->
-    <div class="tag-scroll">
-      <div class="tag-scroll-wrap">
-        <!-- 「全部」标签 -->
-        <div class="tag-item active" id="selectAllTags">
-          <span class="tag-text">全部</span>
-        </div>
-        <!-- 其他标签 -->
-        <div class="tag-item" data-tag="轻食">
-          <span class="tag-text">轻食</span>
-        </div>
-        <div class="tag-item" data-tag="火锅">
-          <span class="tag-text">火锅</span>
-        </div>
-        <div class="tag-item" data-tag="快餐">
-          <span class="tag-text">快餐</span>
-        </div>
-        <div class="tag-item" data-tag="家常菜">
-          <span class="tag-text">家常菜</span>
-        </div>
-        <div class="tag-item" data-tag="甜品">
-          <span class="tag-text">甜品</span>
-        </div>
-        <div class="tag-item" data-tag="面食">
-          <span class="tag-text">面食</span>
-        </div>
-        <div class="tag-item" data-tag="米饭">
-          <span class="tag-text">米饭</span>
-        </div>
-        <div class="tag-item" data-tag="小吃">
-          <span class="tag-text">小吃</span>
-        </div>
-      </div>
-    </div>
-  </div>
+        // 计算两个经纬度之间的距离（单位：米）
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371000; // 地球半径（米）
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2); 
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+            return R * c;
+        }
 
-  <!-- 食物列表滚动容器 -->
-  <div class="food-list-scroll">
-    <div class="food-list" id="foodList">
-      <!-- 食物卡片将通过JS动态生成 -->
-    </div>
-  </div>
+        // 获取附近商家（范围：1公里内）
+        function getNearbyMerchants(userLat, userLng) {
+            return merchants.filter(merchant => {
+                const distance = calculateDistance(userLat, userLng, merchant.lat, merchant.lng);
+                return distance <= 1000; // 1000米范围内
+            });
+        }
 
-  <!-- 悬浮添加按钮 -->
-  <div class="float-add-btn" id="showAddModal">
-    <span>+</span>
-  </div>
+        // 随机选择商家和菜品
+        function randomSelect(nearbyMerchants) {
+            // 随机选商家
+            const randomMerchant = nearbyMerchants[Math.floor(Math.random() * nearbyMerchants.length)];
+            // 随机选菜品
+            const randomDish = randomMerchant.dishes[Math.floor(Math.random() * randomMerchant.dishes.length)];
+            
+            return {
+                merchant: randomMerchant,
+                dish: randomDish
+            };
+        }
 
-  <!-- 添加/修改食物弹窗 -->
-  <div class="modal-mask" id="modalMask" style="display: none;"></div>
-  <div class="modal-content" id="modalContent" style="display: none;">
-    <div class="modal-header">
-      <span class="modal-title" id="modalTitle">添加新食物</span>
-      <span class="modal-close" id="hideModal">✕</span>
-    </div>
-    
-    <!-- 选择三餐分类 -->
-    <div class="modal-section">
-      <span class="section-title">三餐分类</span>
-      <div class="meal-type-wrap">
-        <div class="meal-type-item" data-type="早餐">早餐</div>
-        <div class="meal-type-item" data-type="午餐">午餐</div>
-        <div class="meal-type-item" data-type="晚餐">晚餐</div>
-      </div>
-    </div>
-    
-    <!-- 手动输入模块 -->
-    <div class="modal-section">
-      <span class="section-title">食物名称</span>
-      <input class="food-input" id="inputFoodName" placeholder="请输入食物名称"></input>
-    </div>
-    
-    <!-- 标签勾选模块 -->
-    <div class="modal-section">
-      <span class="section-title">标签选择</span>
-      <!-- 手动添加标签输入框 -->
-      <div class="add-tag-wrap">
-        <input 
-          class="add-tag-input" 
-          id="customTagInput"
-          placeholder="输入自定义标签并回车添加"
-        ></input>
-        <button class="add-tag-btn" id="addCustomTagBtn" style="display: none;">添加</button>
-      </div>
-      <!-- 标签选择列表 -->
-      <div class="tag-check-wrap" id="tagCheckWrap">
-        <!-- 标签将通过JS动态生成 -->
-      </div>
-    </div>
-    
-    <!-- 智能推荐模块 -->
-    <div class="modal-section">
-      <span class="section-title">智能推荐</span>
-      <div class="recommend-list" id="recommendList">
-        <!-- 推荐项将通过JS动态生成 -->
-      </div>
-    </div>
-    
-    <button class="modal-submit" id="modalSubmit">确认添加</button>
-  </div>
+        // 渲染结果
+        function renderResult(result) {
+            resultContainer.innerHTML = `
+                <div class="result-card">
+                    <div class="merchant-name">🏠 ${result.merchant.name}</div>
+                    <div class="dish-name">🍜 ${result.dish.name}</div>
+                    <div class="dish-desc">📝 ${result.dish.desc}</div>
+                </div>
+            `;
+            refreshBtn.disabled = false;
+        }
 
-  <!-- 删除确认弹窗 -->
-  <div class="modal-mask" id="deleteModalMask" style="display: none;"></div>
-  <div class="delete-modal" id="deleteModal" style="display: none;">
-    <div class="delete-content">
-      <span class="delete-title">确认删除？</span>
-      <span class="delete-desc">删除后将从列表和随机库中移除该食物</span>
-      <div class="delete-btns">
-        <button class="cancel-btn" id="hideDeleteConfirm">取消</button>
-        <button class="confirm-delete-btn" id="confirmDelete">确认删除</button>
-      </div>
-    </div>
-  </div>
+        // 初始化定位并选择
+        function initLocation() {
+            if (!navigator.geolocation) {
+                locationStatus.textContent = "❌ 您的浏览器不支持地理位置定位";
+                resultContainer.innerHTML = '<p class="error">无法获取位置，无法随机选择商家</p>';
+                return;
+            }
 
-  <!-- 标签删除确认弹窗 -->
-  <div class="modal-mask" id="tagDeleteModalMask" style="display: none;"></div>
-  <div class="delete-modal" id="tagDeleteModal" style="display: none;">
-    <div class="delete-content">
-      <span class="delete-title">确认删除标签？</span>
-      <span class="delete-desc">删除后所有食物的该标签也会被移除</span>
-      <div class="delete-btns">
-        <button class="cancel-btn" id="hideTagDeleteConfirm">取消</button>
-        <button class="confirm-delete-btn" id="confirmDeleteTag">确认删除</button>
-      </div>
-    </div>
-  </div>
+            // 获取用户位置
+            navigator.geolocation.getCurrentPosition(
+                // 成功回调
+                (position) => {
+                    const userLat = position.coords.latitude;
+                    const userLng = position.coords.longitude;
+                    
+                    locationStatus.textContent = `✅ 定位成功：纬度 ${userLat.toFixed(6)}，经度 ${userLng.toFixed(6)}`;
+                    
+                    // 获取附近商家
+                    const nearbyMerchants = getNearbyMerchants(userLat, userLng);
+                    
+                    if (nearbyMerchants.length === 0) {
+                        resultContainer.innerHTML = '<p class="error">🚫 1公里范围内未找到商家</p>';
+                        return;
+                    }
+                    
+                    // 随机选择并渲染
+                    const result = randomSelect(nearbyMerchants);
+                    renderResult(result);
+                },
+                // 失败回调
+                (error) => {
+                    let errorMsg = "";
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMsg = "❌ 您拒绝了位置权限请求";
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMsg = "❌ 位置信息不可用";
+                            break;
+                        case error.TIMEOUT:
+                            errorMsg = "❌ 定位请求超时";
+                            break;
+                        default:
+                            errorMsg = "❌ 定位失败，请重试";
+                    }
+                    locationStatus.textContent = errorMsg;
+                    resultContainer.innerHTML = `<p class="error">${errorMsg}，无法随机选择商家</p>`;
+                },
+                // 定位选项
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 300000
+                }
+            );
+        }
 
-  <script src="app.js"></script>
+        // 重新选择按钮点击事件
+        refreshBtn.addEventListener('click', () => {
+            resultContainer.innerHTML = '<p class="loading">正在重新随机选择...</p>';
+            refreshBtn.disabled = true;
+            
+            // 重新获取位置（也可以复用之前的位置）
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const userLat = position.coords.latitude;
+                    const userLng = position.coords.longitude;
+                    const nearbyMerchants = getNearbyMerchants(userLat, userLng);
+                    const result = randomSelect(nearbyMerchants);
+                    renderResult(result);
+                }
+            );
+        });
+
+        // 页面加载后初始化
+        window.onload = initLocation;
+    </script>
 </body>
 </html>
